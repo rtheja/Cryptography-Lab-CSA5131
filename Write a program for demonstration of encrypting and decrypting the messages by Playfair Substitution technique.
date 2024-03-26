@@ -1,0 +1,118 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define SIZE 5
+#define MAX_LENGTH 100
+void prepareKeyMatrix(char key[], char keyMatrix[][SIZE]) {
+    int i, j, k;
+    char flag = 0, alphabet = 'A';
+    int keyLength = strlen(key);
+
+    for (i = 0; i < SIZE; ++i) {
+        for (j = 0; j < SIZE; ++j) {
+            if (flag < keyLength) {
+                for (k = 0; k < SIZE; ++k) {
+                    if (key[k] == alphabet || (key[k] == 'J' && alphabet == 'I')) {
+                        alphabet++;
+                        break;
+                    }
+                }
+                keyMatrix[i][j] = alphabet;
+                flag++;
+            } else {
+                while (strchr(key, alphabet) || alphabet == 'J') {
+                    alphabet++;
+                }
+                keyMatrix[i][j] = alphabet++;
+            }
+        }
+    }
+}
+
+void findPosition(char keyMatrix[][SIZE], char ch, int *row, int *col) {
+    int i, j;
+
+    for (i = 0; i < SIZE; ++i) {
+        for (j = 0; j < SIZE; ++j) {
+            if (keyMatrix[i][j] == ch) {
+                *row = i;
+                *col = j;
+                return;
+            }
+        }
+    }
+}
+
+void encrypt(char message[], char keyMatrix[][SIZE]) {
+    int i, len, row1, row2, col1, col2;
+    len = strlen(message);
+
+    for (i = 0; i < len; i += 2) {
+        findPosition(keyMatrix, message[i], &row1, &col1);
+        findPosition(keyMatrix, message[i + 1], &row2, &col2);
+
+        if (row1 == row2) {
+            message[i] = keyMatrix[row1][(col1 + 1) % SIZE];
+            message[i + 1] = keyMatrix[row2][(col2 + 1) % SIZE];
+        }
+        else if (col1 == col2) {
+            message[i] = keyMatrix[(row1 + 1) % SIZE][col1];
+            message[i + 1] = keyMatrix[(row2 + 1) % SIZE][col2];
+        }
+        else {
+            message[i] = keyMatrix[row1][col2];
+            message[i + 1] = keyMatrix[row2][col1];
+        }
+    }
+}
+
+void decrypt(char message[], char keyMatrix[][SIZE]) {
+    int i, len, row1, row2, col1, col2;
+    len = strlen(message);
+
+    for (i = 0; i < len; i += 2) {
+        findPosition(keyMatrix, message[i], &row1, &col1);
+        findPosition(keyMatrix, message[i + 1], &row2, &col2);
+
+        if (row1 == row2) {
+            message[i] = keyMatrix[row1][(col1 - 1 + SIZE) % SIZE];
+            message[i + 1] = keyMatrix[row2][(col2 - 1 + SIZE) % SIZE];
+        }
+        else if (col1 == col2) {
+            message[i] = keyMatrix[(row1 - 1 + SIZE) % SIZE][col1];
+            message[i + 1] = keyMatrix[(row2 - 1 + SIZE) % SIZE][col2];
+        }
+        
+        else {
+            message[i] = keyMatrix[row1][col2];
+            message[i + 1] = keyMatrix[row2][col1];
+        }
+    }
+}
+
+int main() {
+    char key[SIZE * SIZE], message[MAX_LENGTH], keyMatrix[SIZE][SIZE];
+
+    printf("Enter the key (should not contain 'J'): ");
+    fgets(key, sizeof(key), stdin);
+    strtok(key, "\n"); 
+    prepareKeyMatrix(key, keyMatrix);
+
+    printf("Enter the message to encrypt: ");
+    fgets(message, sizeof(message), stdin);
+    strtok(message, "\n"); 
+    for (int i = 0; message[i] != '\0'; i++) {
+        if (isalpha(message[i])) {
+            message[i] = toupper(message[i]);
+        }
+    }
+
+    encrypt(message, keyMatrix);
+    printf("Encrypted message: %s\n", message);
+
+    decrypt(message, keyMatrix);
+    printf("Decrypted message: %s\n", message);
+
+    return 0;
+}
